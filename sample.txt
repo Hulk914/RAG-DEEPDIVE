@@ -1,0 +1,66 @@
+RAG mini demo: project notes
+
+This file is original sample material for a small learning project. The project
+compares three ways to answer the same question: a direct Gemini call, RAG with
+explicit Python steps, and RAG with LangChain Expression Language (LCEL). These
+notes describe this particular demo, so they contain details a model would not
+receive in the direct-answer baseline.
+
+Embedding configuration
+
+The demo uses Google's gemini-embedding-001 embedding model. Each document chunk
+is represented by a vector with 1,536 dimensions. Questions are embedded with the
+same model and output dimensionality before searching. A vector is a list of
+numbers; comparing these vectors helps retrieve text related to the question.
+The chat model is a separate component that writes answers from the supplied text.
+
+Pinecone configuration
+
+Document vectors are stored in a Pinecone dense index using cosine similarity.
+The index is serverless, hosted in AWS us-east-1. Its dimension is 1,536, matching
+the embedding output. The index name comes from the INDEX_NAME environment
+variable. Users should create a dedicated index for this demo rather than reuse
+an index that contains other work.
+
+Chunking and retrieval configuration
+
+Ingestion reads this UTF-8 file and uses CharacterTextSplitter with a target
+chunk size of 1,000 characters and a chunk overlap of zero. The retriever uses
+k=3, so each RAG question requests up to three relevant chunks. The format_docs
+helper joins the retrieved text with blank lines to form the prompt's context.
+Retrieval may return related text even when the source does not answer a question.
+
+The three implementations
+
+Implementation 0 sends the question directly to Gemini without retrieving these
+notes. Implementation 1 explicitly retrieves documents, formats them as context,
+builds chat messages, and invokes Gemini. Implementation 2 performs that same RAG
+workflow as an LCEL chain. Both RAG versions use the same retriever settings and
+prompt, so LCEL changes composition rather than the information available to the
+model. Generated wording may differ between calls.
+
+How the LCEL chain works
+
+The input is a dictionary containing a question key. itemgetter extracts that
+question for retrieval. RunnablePassthrough.assign preserves the input question
+and adds the retrieved text under a context key. The prompt template receives
+both fields, the chat model generates a response, and StrOutputParser returns
+the answer as plain text. The pipe operator connects these steps in sequence.
+
+Updating the knowledge base
+
+Run ingestion.py before main.py. When this file changes, rebuild the dedicated
+index using ingestion.py --reset-index. The reset option deletes the index and
+all its previous contents before recreating it. Without that option, ingestion
+refuses to replace an existing index. Newly uploaded records can take a short
+time to become searchable. Updating these notes and re-indexing changes the
+available context without retraining the chat model.
+
+What this demo does and does not show
+
+RAG can make relevant project information available at question time. It still
+depends on the quality of the source and retrieved chunks. The shared RAG prompt
+asks the model to say it does not know when the context lacks an answer, but this
+instruction cannot guarantee correctness. This example does not evaluate answer
+accuracy, report benchmarks, provide automatic source citations, or implement an
+agent. Its purpose is to make the basic retrieval and generation flow easy to read.

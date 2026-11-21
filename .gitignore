@@ -1,0 +1,32 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+venv/
+
+# Local secrets; publish only the placeholder template.
+.env*
+!.env.example
+.aws/
+*.pem
+*.key
+
+# Tool caches and local editor settings
+.uv-cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
+
+# Original local reading material; the public demo uses sample.txt.
+mediumblog1.txt
