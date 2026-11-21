@@ -27,6 +27,3 @@ venv/
 *.log
 .DS_Store
 Thumbs.db
-
-# Local Medium article text; see README.md for setup and source attribution.
-mediumblog1.txt

@@ -3,7 +3,7 @@
 Run with: python -m unittest discover -s tests -v
 No API credentials or external services are used.
 Small synthetic Pinecone passages stand in for Medium article chunks, so the
-tests do not require the local article file or evaluate generated answer quality.
+tests are independent of the bundled text and do not evaluate answer quality.
 """
 
 import os
@@ -99,8 +99,8 @@ class IngestionTests(unittest.TestCase):
             )
         )
         self.stack.enter_context(patch.object(ingestion, "load_dotenv"))
-        # The Medium article is a local input, so tests provide their own text
-        # and also work in a fresh checkout without that file.
+        # Use predictable source text to check uploads independently of changes
+        # to the bundled Medium article.
         self.source_text = (
             "Pinecone is a managed vector database.\n\n"
             "It supports similarity search over embeddings."

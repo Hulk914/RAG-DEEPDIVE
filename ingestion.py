@@ -38,8 +38,8 @@ def main(reset_index=False):
         source_text = source_path.read_text(encoding="utf-8")
     except FileNotFoundError:
         raise SystemExit(
-            "mediumblog1.txt was not found. Save the Medium example text as UTF-8 "
-            "next to ingestion.py; see README.md for the article link."
+            "mediumblog1.txt was not found. Restore the included example file "
+            "from this repository next to ingestion.py."
         ) from None
     if not source_text.strip():
         raise SystemExit("mediumblog1.txt is empty. Add text before running ingestion.")

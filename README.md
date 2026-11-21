@@ -27,7 +27,7 @@ This is a learning demo rather than a benchmark or a production application.
 | --- | --- |
 | `ingestion.py` | Read the Medium article text, split it, embed the chunks, and upload them to Pinecone. |
 | `main.py` | Run the three answer implementations using the same question. |
-| `mediumblog1.txt` | Local Medium article text used as the knowledge base; supplied separately and ignored by Git. |
+| `mediumblog1.txt` | Included Medium article text used as the demo knowledge base. |
 | `.env.example` | Placeholder configuration to copy locally; contains no real credentials. |
 | `.gitignore` | Exclude local secrets, virtual environments, and caches from Git. |
 | `tests/test_demo.py` | Offline checks using fake model/retriever responses and mocked Pinecone calls. |
@@ -72,13 +72,12 @@ The chat model defaults to `gemini-3.5-flash-lite`. The optional `GEMINI_MODEL`
 setting lets you select another Gemini chat model available to your API account.
 Both scripts use `gemini-embedding-001` with 1,536 dimensions for embeddings.
 
-### 3. Prepare and ingest the Medium example
+### 3. Ingest the included Medium example
 
-The example uses **Vector Database: What is it and why you should know it?** by
-Ejiro Onose. Open the [original Medium article](https://medium.com/@EjiroOnose/vector-database-what-is-it-and-why-you-should-know-it-ae7e7dca82a4)
-and save the article text as a UTF-8 file named `mediumblog1.txt` next to
-`ingestion.py`. The local article file is ignored by Git, so this step is required
-after cloning. If you already have that file, keep using it.
+The repository includes `mediumblog1.txt` next to `ingestion.py`, ready for
+ingestion after you configure `.env`. The text comes from **Vector Database:
+What is it and why you should know it?** by Ejiro Onose; see the
+[original Medium article](https://medium.com/@EjiroOnose/vector-database-what-is-it-and-why-you-should-know-it-ae7e7dca82a4).
 
 ```powershell
 uv run --locked python ingestion.py
@@ -219,8 +218,8 @@ uv run --locked python -m unittest discover -s tests -v
 ```
 
 These checks need no credentials or network access once dependencies are installed.
-Small synthetic Pinecone passages stand in for retrieved article chunks, so the
-checks also work without the local Medium article file.
+Small synthetic Pinecone passages stand in for retrieved article chunks, keeping
+the checks predictable and independent of changes to the bundled article.
 They check question/context propagation, text output, missing configuration,
 missing or empty source files, and protection against accidental index deletion.
 They do not validate live Gemini access, Pinecone provisioning, or answer quality.
@@ -230,7 +229,7 @@ They do not validate live Gemini access, Pinecone provisioning, or answer qualit
 | Problem | What to check |
 | --- | --- |
 | Missing configuration | Copy `.env.example` to `.env` and fill in the required values. |
-| Missing source file | Save the Medium article text as UTF-8 in `mediumblog1.txt` next to `ingestion.py`. |
+| Missing source file | Restore the included `mediumblog1.txt` from this repository next to `ingestion.py`. |
 | Authentication or model-access error | Check the relevant API key and account access. Set `GEMINI_MODEL` to an available chat model if needed. |
 | Quota or rate-limit error | Check the provider's quota/billing settings and retry after the limit resets. |
 | Index not found | Run ingestion first and use the same `INDEX_NAME` for both scripts. |
