@@ -89,6 +89,15 @@ class IngestionTests(unittest.TestCase):
             )
         )
         self.stack.enter_context(patch.object(ingestion, "load_dotenv"))
+        # The Medium article is a local input, so tests provide their own text
+        # and also work in a fresh checkout without that file.
+        self.read_source = self.stack.enter_context(
+            patch.object(
+                ingestion.Path,
+                "read_text",
+                return_value="Pinecone is a managed vector database.",
+            )
+        )
         self.stack.enter_context(redirect_stdout(StringIO()))
         self.pc = self.stack.enter_context(patch.object(ingestion, "Pinecone"))
         self.embeddings = self.stack.enter_context(
@@ -122,7 +131,9 @@ class IngestionTests(unittest.TestCase):
         self.upload.assert_called_once()
         chunks = self.upload.call_args.args[0]
         self.assertGreater(len(chunks), 0)
-        self.assertTrue(all(doc.metadata["source"] == "sample.txt" for doc in chunks))
+        self.assertTrue(
+            all(doc.metadata["source"] == "mediumblog1.txt" for doc in chunks)
+        )
 
     def test_new_index_needs_no_reset(self):
         self.pc.return_value.has_index.return_value = False
@@ -142,10 +153,18 @@ class IngestionTests(unittest.TestCase):
         self.pc.assert_not_called()
         self.upload.assert_not_called()
 
-    def test_empty_sample_fails_before_reset(self):
-        with patch.object(ingestion.Path, "read_text", return_value="  "):
-            with self.assertRaisesRegex(SystemExit, "sample.txt is empty"):
-                ingestion.main(reset_index=True)
+    def test_empty_source_fails_before_reset(self):
+        self.read_source.return_value = "  "
+        with self.assertRaisesRegex(SystemExit, "mediumblog1.txt is empty"):
+            ingestion.main(reset_index=True)
+
+        self.pc.assert_not_called()
+        self.upload.assert_not_called()
+
+    def test_missing_source_fails_before_reset(self):
+        self.read_source.side_effect = FileNotFoundError
+        with self.assertRaisesRegex(SystemExit, "mediumblog1.txt was not found"):
+            ingestion.main(reset_index=True)
 
         self.pc.assert_not_called()
         self.upload.assert_not_called()

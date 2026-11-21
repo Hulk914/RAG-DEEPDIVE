@@ -28,5 +28,5 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Original local reading material; the public demo uses sample.txt.
+# Local Medium article text; see README.md for setup and source attribution.
 mediumblog1.txt

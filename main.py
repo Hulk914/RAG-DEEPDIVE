@@ -111,11 +111,9 @@ def main():
     # Return up to three relevant chunks from the already populated index.
     retriever = vector_store.as_retriever(search_kwargs={"k": 3})
 
-    # This question concerns the supplied sample, so the direct-answer baseline
-    # has no project notes to consult. Change it to explore other questions.
-    query = (
-        "Which embedding model, vector size, and retrieval limit does this demo use?"
-    )
+    # Compare a direct answer with answers grounded in the Medium article.
+    # Change this question to explore other topics covered by your source text.
+    query = "what is Pinecone in machine learning"
 
     # Implementation 0: no document retrieval, only the question.
     print("\n" + "=" * 70)

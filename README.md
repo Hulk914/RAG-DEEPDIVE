@@ -25,9 +25,9 @@ This is a learning demo rather than a benchmark or a production application.
 
 | File | Purpose |
 | --- | --- |
-| `ingestion.py` | Read the sample, split it, embed the chunks, and upload them to Pinecone. |
+| `ingestion.py` | Read the Medium article text, split it, embed the chunks, and upload them to Pinecone. |
 | `main.py` | Run the three answer implementations using the same question. |
-| `sample.txt` | Original project notes used as the demo knowledge base. |
+| `mediumblog1.txt` | Local Medium article text used as the knowledge base; supplied separately and ignored by Git. |
 | `.env.example` | Placeholder configuration to copy locally; contains no real credentials. |
 | `.gitignore` | Exclude local secrets, virtual environments, and caches from Git. |
 | `tests/test_demo.py` | Offline checks using fake model/retriever responses and mocked Pinecone calls. |
@@ -72,19 +72,25 @@ The chat model defaults to `gemini-3.5-flash-lite`. The optional `GEMINI_MODEL`
 setting lets you select another Gemini chat model available to your API account.
 Both scripts use `gemini-embedding-001` with 1,536 dimensions for embeddings.
 
-### 3. Ingest the sample
+### 3. Prepare and ingest the Medium example
+
+The example uses **Vector Database: What is it and why you should know it?** by
+Ejiro Onose. Open the [original Medium article](https://medium.com/@EjiroOnose/vector-database-what-is-it-and-why-you-should-know-it-ae7e7dca82a4)
+and save the article text as a UTF-8 file named `mediumblog1.txt` next to
+`ingestion.py`. The local article file is ignored by Git, so this step is required
+after cloning. If you already have that file, keep using it.
 
 ```powershell
 uv run --locked python ingestion.py
 ```
 
-This reads `sample.txt`, creates a Pinecone index, and uploads the embedded chunks.
+This reads `mediumblog1.txt`, creates a Pinecone index, and uploads the embedded chunks.
 Paths are resolved relative to the script, so there is no machine-specific path
 to edit. Index creation waits up to 60 seconds for readiness. Uploaded records
 can take a few more seconds to become searchable.
 
 If that index already exists, ingestion stops and leaves it unchanged. To rebuild
-your dedicated demo index after editing the sample, run:
+your dedicated demo index after editing the source text, run:
 
 ```powershell
 uv run --locked python ingestion.py --reset-index
@@ -101,13 +107,13 @@ uv run --locked python main.py
 
 The default question is:
 
-> Which embedding model, vector size, and retrieval limit does this demo use?
+> what is Pinecone in machine learning
 
-These details appear in the sample notes. The RAG versions should be able to use
-that context: `gemini-embedding-001`, 1,536 dimensions, and up to three chunks.
-The direct-answer baseline receives no project notes, so it may guess or ask for
-more information. Exact responses vary; this is an illustration, not an accuracy
-measurement.
+The RAG versions retrieve relevant parts of the Medium article before answering.
+The direct-answer baseline receives only the question. Since Pinecone is a
+general topic, the direct model may already answer well; compare how the RAG
+answers use the article's context. Exact responses vary, and this comparison
+does not measure accuracy improvements.
 
 You will see three labeled sections, one per implementation. A complete run
 makes three chat-model calls and performs embedding/search separately for each
@@ -116,9 +122,10 @@ RAG version. These API operations and Pinecone resources can incur charges.
 
 ## Experiment with your own text
 
-Edit `sample.txt` and change `query` inside `main()` to a question about your text.
+Replace the contents of `mediumblog1.txt` and change `query` inside `main()` to a
+question about your text.
 Rebuild the dedicated index, then run the comparison again. Try a question whose
-answer is absent from the sample too.
+answer is absent from the source too.
 
 The text is sent to Google's embedding API and stored in Pinecone; the retrieved
 chunks are sent to the Gemini chat model. Use sample material you are comfortable
@@ -132,7 +139,7 @@ RAG updates the information in the prompt; it does not retrain the chat model.
 
 ```text
 Ingestion:
-sample.txt -> Document -> chunks -> embedding model -> Pinecone
+mediumblog1.txt -> Document -> chunks -> embedding model -> Pinecone
 
 RAG at question time:
 question -> embed and search Pinecone -> retrieved chunks
@@ -212,21 +219,22 @@ uv run --locked python -m unittest discover -s tests -v
 ```
 
 These checks need no credentials or network access once dependencies are installed.
-They check question/context propagation, text output, missing configuration, and
-protection against accidental index deletion. They do not validate live Gemini
-access, Pinecone provisioning, or generated answer quality.
+They check question/context propagation, text output, missing configuration,
+missing or empty source files, and protection against accidental index deletion.
+They do not validate live Gemini access, Pinecone provisioning, or answer quality.
 
 ## Troubleshooting
 
 | Problem | What to check |
 | --- | --- |
 | Missing configuration | Copy `.env.example` to `.env` and fill in the required values. |
+| Missing source file | Save the Medium article text as UTF-8 in `mediumblog1.txt` next to `ingestion.py`. |
 | Authentication or model-access error | Check the relevant API key and account access. Set `GEMINI_MODEL` to an available chat model if needed. |
 | Quota or rate-limit error | Check the provider's quota/billing settings and retry after the limit resets. |
 | Index not found | Run ingestion first and use the same `INDEX_NAME` for both scripts. |
 | Index already exists | Choose a fresh demo index name or explicitly rebuild with `--reset-index`. |
 | Index creation times out | Check its status in Pinecone before retrying. A timed-out creation may still finish. |
-| Empty or unexpected context | Wait briefly after upload, check that the index contains records, and ask about `sample.txt`. |
+| Empty or unexpected context | Wait briefly after upload, check that the index contains records, and ask about `mediumblog1.txt`. |
 | Vector dimension mismatch | Use 1,536 dimensions for this demo and rebuild the dedicated index after embedding changes. |
 
 ## Before publishing to GitHub

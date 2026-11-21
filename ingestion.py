@@ -1,4 +1,4 @@
-"""Load sample.txt, split it, embed its chunks, and upload them to Pinecone.
+"""Load mediumblog1.txt, split it, embed its chunks, and upload them to Pinecone.
 
 Run this before main.py. An existing index is left untouched unless you explicitly
 pass --reset-index, which deletes and recreates it. Use a dedicated demo index.
@@ -33,10 +33,16 @@ def main(reset_index=False):
 
     # Pathlib works across operating systems. Plain UTF-8 text needs no external
     # document parser, spaCy model, or system-specific file path.
-    source_path = Path(__file__).resolve().with_name("sample.txt")
-    source_text = source_path.read_text(encoding="utf-8")
+    source_path = Path(__file__).resolve().with_name("mediumblog1.txt")
+    try:
+        source_text = source_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raise SystemExit(
+            "mediumblog1.txt was not found. Save the Medium example text as UTF-8 "
+            "next to ingestion.py; see README.md for the article link."
+        ) from None
     if not source_text.strip():
-        raise SystemExit("sample.txt is empty. Add text before running ingestion.")
+        raise SystemExit("mediumblog1.txt is empty. Add text before running ingestion.")
     documents = [
         Document(page_content=source_text, metadata={"source": source_path.name})
     ]
