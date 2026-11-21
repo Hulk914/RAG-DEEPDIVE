@@ -219,6 +219,8 @@ uv run --locked python -m unittest discover -s tests -v
 ```
 
 These checks need no credentials or network access once dependencies are installed.
+Small synthetic Pinecone passages stand in for retrieved article chunks, so the
+checks also work without the local Medium article file.
 They check question/context propagation, text output, missing configuration,
 missing or empty source files, and protection against accidental index deletion.
 They do not validate live Gemini access, Pinecone provisioning, or answer quality.

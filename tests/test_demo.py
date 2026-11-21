@@ -2,6 +2,8 @@
 
 Run with: python -m unittest discover -s tests -v
 No API credentials or external services are used.
+Small synthetic Pinecone passages stand in for Medium article chunks, so the
+tests do not require the local article file or evaluate generated answer quality.
 """
 
 import os
@@ -22,16 +24,24 @@ class RetrievalTests(unittest.TestCase):
     """Check that both implementations pass the question and retrieved context."""
 
     def setUp(self):
-        self.question = "Which vector size does this demo use?"
+        self.question = "what is Pinecone in machine learning"
         self.docs = [
-            Document(page_content="The vector size is 1536."),
-            Document(page_content="Retrieval requests up to three chunks."),
+            Document(
+                page_content="Pinecone is a managed vector database.",
+                metadata={"source": "mediumblog1.txt"},
+            ),
+            Document(
+                page_content="It supports similarity search over embeddings.",
+                metadata={"source": "mediumblog1.txt"},
+            ),
         ]
+        self.answer = "Pinecone is a managed vector database for searching embeddings."
 
     def test_format_docs_handles_documents_and_empty_results(self):
         self.assertEqual(
             demo.format_docs(self.docs),
-            "The vector size is 1536.\n\nRetrieval requests up to three chunks.",
+            "Pinecone is a managed vector database.\n\n"
+            "It supports similarity search over embeddings.",
         )
         self.assertEqual(demo.format_docs([]), "")
 
@@ -39,11 +49,11 @@ class RetrievalTests(unittest.TestCase):
         retriever = Mock()
         retriever.invoke.return_value = self.docs
         llm = Mock()
-        llm.invoke.return_value = AIMessage(content="1536 dimensions")
+        llm.invoke.return_value = AIMessage(content=self.answer)
 
         answer = demo.retrieval_chain_without_lcel(self.question, retriever, llm)
 
-        self.assertEqual(answer, "1536 dimensions")
+        self.assertEqual(answer, self.answer)
         retriever.invoke.assert_called_once_with(self.question)
         messages = llm.invoke.call_args.args[0]
         content = messages[0].content
@@ -61,13 +71,13 @@ class RetrievalTests(unittest.TestCase):
             content = prompt.to_messages()[0].content
             self.assertIn(self.question, content)
             self.assertIn(demo.format_docs(self.docs), content)
-            return AIMessage(content="1536 dimensions")
+            return AIMessage(content=self.answer)
 
         chain = demo.retrieval_chain_with_lcel(
             RunnableLambda(retrieve), RunnableLambda(respond)
         )
         self.assertEqual(retrieved_questions, [])
-        self.assertEqual(chain.invoke({"question": self.question}), "1536 dimensions")
+        self.assertEqual(chain.invoke({"question": self.question}), self.answer)
         self.assertEqual(retrieved_questions, [self.question])
 
 
@@ -91,11 +101,15 @@ class IngestionTests(unittest.TestCase):
         self.stack.enter_context(patch.object(ingestion, "load_dotenv"))
         # The Medium article is a local input, so tests provide their own text
         # and also work in a fresh checkout without that file.
+        self.source_text = (
+            "Pinecone is a managed vector database.\n\n"
+            "It supports similarity search over embeddings."
+        )
         self.read_source = self.stack.enter_context(
             patch.object(
                 ingestion.Path,
                 "read_text",
-                return_value="Pinecone is a managed vector database.",
+                return_value=self.source_text,
             )
         )
         self.stack.enter_context(redirect_stdout(StringIO()))
@@ -131,6 +145,9 @@ class IngestionTests(unittest.TestCase):
         self.upload.assert_called_once()
         chunks = self.upload.call_args.args[0]
         self.assertGreater(len(chunks), 0)
+        self.assertEqual(
+            "\n\n".join(doc.page_content for doc in chunks), self.source_text
+        )
         self.assertTrue(
             all(doc.metadata["source"] == "mediumblog1.txt" for doc in chunks)
         )
